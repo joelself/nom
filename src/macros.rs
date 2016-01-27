@@ -2331,6 +2331,88 @@ macro_rules! many0(
   );
 );
 
+/// `many0_join!(I -> IResult<I,O>) => I -> IResult<I, O>`
+/// Applies the parser 0 or more times and returns a slice of everything that was parsed
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(multi<&[u8], &[u8]>, many0_join!( tag!( "abcd" ) ) );
+///
+///  let a = b"abcdabcdefgh";
+///  let b = b"azerty";
+///
+///  let res = &b"abcdabcd"[..];
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
+///  assert_eq!(multi(&b[..]), Done(&b"azerty"[..], ""));
+/// # }
+/// ```
+/// 0 or more
+#[macro_export]
+macro_rules! many0_join(
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      if ($i).input_len() == 0 {
+        $crate::IResult::Done($i, "")
+      } else {
+        match $submac!($i, $($args)*) {
+          $crate::IResult::Error(_)      => {
+            $crate::IResult::Done($i, "")
+          },
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,o1)   => {
+            if i1.input_len() == 0 {
+              $crate::IResult::Done(i1, &$i[..($i).input_len() - i1.input_len()])
+            } else {
+              let mut consumed: usize = ($i).input_len() - i1.input_len();
+              let mut input  = i1;
+              let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+              loop {
+                match $submac!(input, $($args)*) {
+                  $crate::IResult::Done(i, o) => {
+                    // do not allow parsers that do not consume input (causes infinite loops)
+                    if i.input_len() == input.input_len() {
+                      break;
+                    }
+                    consumed += input.input_len() - i.input_len();
+                    input = i;
+                  }
+                  $crate::IResult::Error(_)                    => {
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                    incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                    incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                    break;
+                  },
+                }
+                if input.input_len() == 0 {
+                  break;
+                }
+              }
+
+              match incomplete {
+                ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+                ::std::option::Option::None    => $crate::IResult::Done(input, &$i[..consumed])
+              }
+            }
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    many0_join!($i, call!($f));
+  );
+);
+
 /// `many1!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser 1 or more times and returns the list of results in a Vec
 ///
@@ -2408,6 +2490,84 @@ macro_rules! many1(
     many1!($i, call!($f));
   );
 );
+
+
+/// `many1_join!(I -> IResult<I,O>) => I -> IResult<I, O>`
+/// Applies the parser 1 or more times and returns a slice of everything that was parsed
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(multi<&[u8], &[u8]>, many1_join!( tag!( "abcd" ) ) );
+///
+///  let a = b"abcdabcdefgh";
+///  let b = b"azerty";
+///
+///  let res = &b"abcdabcd"[..];
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
+///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! many1_join(
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1Join,$i)),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i1,o1)   => {
+          if i1.len() == 0 {
+            $crate::IResult::Done(i1,&$i[..($i).input_len() - i1.input_len()])
+          } else {
+            let mut consumed: usize = ($i).input_len() - i1.input_len();
+            let mut input  = i1;
+            let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+            loop {
+              if input.input_len() == 0 {
+                break;
+              }
+              match $submac!(input, $($args)*) {
+                $crate::IResult::Error(_)                    => {
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  break;
+                },
+                $crate::IResult::Done(i, o) => {
+                  if i.input_len() == input.input_len() {
+                    break;
+                  }
+                  consumed += input.input_len() - i.input_len();
+                  input = i;
+                }
+              }
+            }
+
+            match incomplete {
+              ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+              ::std::option::Option::None    => $crate::IResult::Done(input, &$i[..consumed])
+            }
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    many1_join!($i, call!($f));
+  );
+);
+
 
 /// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser between m and n times (n included) and returns the list of results in a Vec
@@ -2495,6 +2655,93 @@ macro_rules! many_m_n(
   );
 );
 
+/// `many_m_n_join!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, O>`
+/// Applies the parser between m and n times (n included) and returns a slice of everything that was parsed
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(multi<&[u8], &[u8]>, many_m_n_join!(2, 4, tag!( "abcd" ) ) );
+///
+///  let a = b"abcdefgh";
+///  let b = b"abcdabcdefgh";
+///  let c = b"abcdabcdabcdabcdabcdefgh";
+///
+///  assert_eq!(multi(&a[..]),Error(Position(ErrorKind::ManyMN,&a[..])));
+///  let res = &b"abcdabcd"[..];
+///  assert_eq!(multi(&b[..]), Done(&b"efgh"[..], res));
+///  let res2 = &b"abcdabcdabcdabcd"[..];
+///  assert_eq!(multi(&c[..]), Done(&b"abcdefgh"[..], res2));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! many_m_n_join(
+  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      let mut consumed: usize = 0;
+      let mut input           = $i;
+      let mut count: usize    = 0;
+      let mut err             = false;
+      let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+      loop {
+        if count == $n { break }
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Done(i, o) => {
+            // do not allow parsers that do not consume input (causes infinite loops)
+            if i.input_len() == input.input_len() {
+              break;
+            }
+            res.push(o);
+            consumed += input.input_len() - i.input_len();
+            input  = i;
+            count += 1;
+          }
+          $crate::IResult::Error(_)                    => {
+            err = true;
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            break;
+          },
+        }
+        if input.input_len() == 0 {
+          break;
+        }
+      }
+
+      if count < $m {
+        if err {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ManyMNJoin,$i))
+        } else {
+          match incomplete {
+            ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+            ::std::option::Option::None    => $crate::IResult::Incomplete($crate::Needed::Unknown)
+          }
+        }
+      } else {
+        match incomplete {
+          ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+          ::std::option::Option::None    => $crate::IResult::Done(input, &$i[..consumed])
+        }
+      }
+    }
+  );
+  ($i:expr, $m:expr, $n: expr, $f:expr) => (
+    many_m_n_join!($i, $m, $n, call!($f));
+  );
+);
+
 /// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
 /// Applies the child parser a specified number of times
 ///
@@ -2553,6 +2800,67 @@ macro_rules! count(
   );
   ($i:expr, $f:expr, $count: expr) => (
     count!($i, call!($f), $count);
+  );
+);
+
+/// `count_join!(I -> IResult<I,O>, nb) => I -> IResult<I, O>`
+/// Applies the child parser a specified number of times and returns a slice containing what was parsed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(counter_join< &[u8] >, count!( tag!( "abcd" ), 2 ) );
+///
+///  let a = b"abcdabcdabcdef";
+///  let b = b"abcdefgh";
+///  let res = &b"abcdabcd"[..];
+///
+///  assert_eq!(counter_join(&a[..]), Done(&b"abcdef"[..], res));
+///  assert_eq!(counter_join(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! count_join(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+    {
+      let mut input             = $i;
+      let mut consumed: usize   = 0;
+      let mut cnt: usize        = 0;
+      let mut err               = false;
+      loop {
+        if cnt == $count {
+          break
+        }
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Done(i,o) => {
+            consumed += input.input_len() - i.input_len();
+            input = i;
+            cnt = cnt + 1;
+          },
+          $crate::IResult::Error(_)  => {
+            err = true;
+            break;
+          },
+          $crate::IResult::Incomplete(_) => {
+            break;
+          }
+        }
+      }
+      if err {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::CountJoin,$i))
+      } else if cnt == $count {
+        $crate::IResult::Done(input, &$i[..consumed])
+      } else {
+        $crate::IResult::Incomplete($crate::Needed::Unknown)
+      }
+    }
+  );
+  ($i:expr, $f:expr, $count: expr) => (
+    count_join!($i, call!($f), $count);
   );
 );
 
