@@ -143,6 +143,58 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+
+    // Functions that take a data object
+    ($name:ident( $i:ty, $d:ty ) -> $o:ty, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i, $data: $d ) -> $crate::IResult<$i,$o,u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$i:ty,$o:ty,$e:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i, $data: $d ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$i:ty,$o:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i, $data: $d ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$o:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name<'a>( i: &'a[u8], $data: $d ) -> $crate::IResult<&'a [u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: &[u8], $data: $d ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident( $i:ty, $d:ty ) -> $o:ty, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i, $data: $d ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$i:ty,$o:ty,$e:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i , $data: $d ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$i:ty,$o:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i, $data: $d  ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$o:ty,$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: &[u8], $data: $d ) -> $crate::IResult<&[u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$d:ty>, $data:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name<'a>( i: &'a [u8], $data: $d ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
 );
 
 /// Used to wrap common expressions and function as macros
@@ -152,12 +204,28 @@ macro_rules! call (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
+/// Used to called functions with a data object
+#[macro_export]
+macro_rules! call_d (
+  ($i:expr, $fun:path, $data:ident) => ( $fun( $i, $data ) );
+  ($i:expr, $fun:path, $data:ident, $($args:expr),* ) => ( $fun( $i, $data, $($args),* ) );
+);
+
 /// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
 ///
 /// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
+);
+
+/// emulate function currying for method calls on functions that take a data object
+/// `apply!(cell.my_function, arg1, arg2, ...)` becomes `cell.borrow_mut().my_function(input, arg1, arg2, ...)`
+///
+/// Supports up to 6 arguments
+#[macro_export]
+macro_rules! apply_d (
+  ($i:expr, $fun:path, $data:ident, $($args:expr),* ) => ( $fun( $i, $data, $($args),* ) );
 );
 
 /// Prevents backtracking if the child parser fails
