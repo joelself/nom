@@ -8,10 +8,11 @@ nom++ is an extension of nom that allows you to create parsing [methods](http://
 ## Features
 
 Here are the current and planned features, with their status:
-- [ ] Re-implement all of the macros in nom's macros.rs to either call methods or create methods
+- [ ] ~~Re-implement all of the macros in nom's macros.rs to either call methods or create methods~~
 - [ ] Write tests for all of the new ways you can create and call methods and functions
 
-## How to use it
+## How ***NOT*** to use it
+####Since I first wrote this I changed how methods work a bunch of times. The new way to use them is really simple and I'll update this README with how to use them when I get a chance. Everything after this line is out of date.
 
 First read up on how to use [nom](https://github.com/Geal/nom) because the basics are the same. The differences come in creating methods and then in macros that call more than one method inside a method.
 
