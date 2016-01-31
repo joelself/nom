@@ -1350,6 +1350,9 @@ macro_rules! alt_complete (
   ($i:expr, $e:ident | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) | $($rest)*);
   );
+  ($i:expr, $self_:ident.$method:ident | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call_m!($self_.$method)) | $($rest)*);
+  );
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
@@ -1373,11 +1376,17 @@ macro_rules! alt_complete (
   ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
   );
+  ($i:expr, $self_:ident.$method:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call_m!($self_.$method)) => { $gen } | $($rest)*);
+  );
 
   // Tail (non-recursive) rules
 
   ($i:expr, $e:ident => { $gen:expr }) => (
     alt_complete!($i, call!($e) => { $gen });
+  );
+  ($i:expr, $self_:ident.$method:ident => { $gen:expr }) => (
+    alt_complete!($i, call_m!($self_.$method) => { $gen });
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
@@ -1386,6 +1395,9 @@ macro_rules! alt_complete (
 
   ($i:expr, $e:ident) => (
     alt_complete!($i, call!($e));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    alt_complete!($i, call_m!($self_.$method));
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
@@ -1459,6 +1471,11 @@ macro_rules! switch (
       switch_impl!($i, call!($e), $($rest)*)
     }
   );
+  ($i:expr, $self_:ident.$method:ident, $($rest:tt)*) => (
+    {
+      switch_impl!($i, call_m!($self_.$method), $($rest)*)
+    }
+  );
 );
 
 /// Internal parser, do not use directly
@@ -1519,6 +1536,9 @@ macro_rules! opt(
   ($i:expr, $f:expr) => (
     opt!($i, call!($f));
   );
+  ($i:expr, $self_:ident$method:ident) => (
+    opt!($i, call_m!($self_.$method));
+  );
 );
 
 /// `opt_res!(I -> IResult<I,O>) => I -> IResult<I, Result<nom::Err,O>>`
@@ -1553,6 +1573,9 @@ macro_rules! opt_res (
   );
   ($i:expr, $f:expr) => (
     opt_res!($i, call!($f));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    opt_res!($i, call_m!($self_.$method));
   );
 );
 
@@ -1607,6 +1630,9 @@ macro_rules! cond(
   ($i:expr, $cond:expr, $f:expr) => (
     cond!($i, $cond, call!($f));
   );
+  ($i:expr, $cond:expr, $self_:ident.$method:ident) => (
+    cond!($i, $cond, call_m!($self_.$method));
+  );
 );
 
 /// `cond_reduce!(bool, I -> IResult<I,O>) => I -> IResult<I, O>`
@@ -1659,6 +1685,9 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $f:expr) => (
     cond_reduce!($i, $cond, call!($f));
   );
+  ($i:expr, $cond:expr, $self_:ident.$method:ident) => (
+    cond_reduce!($i, $cond, call_m!($self_.$method));
+  );
 );
 
 /// `peek!(I -> IResult<I,O>) => I -> IResult<I, O>`
@@ -1689,6 +1718,9 @@ macro_rules! peek(
   );
   ($i:expr, $f:expr) => (
     peek!($i, call!($f));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    peek!($i, call_m!($self_.$method));
   );
 );
 
@@ -1724,6 +1756,9 @@ macro_rules! tap (
   ($i:expr, $name: ident: $f:expr => $e:expr) => (
     tap!($i, $name: call!($f) => $e);
   );
+  ($i:expr, $name: ident: $f:expr => $e:expr) => (
+    tap!($i, $name: call_m!($self_.$method) => $e);
+  );
 );
 
 /// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
@@ -1748,6 +1783,18 @@ macro_rules! pair(
   ($i:expr, $f:expr, $g:expr) => (
     pair!($i, call!($f), call!($g));
   );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    pair!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    pair!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
+
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    pair!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
 );
 
 /// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
@@ -1768,6 +1815,58 @@ macro_rules! separated_pair(
 
   ($i:expr, $f:expr, $($rest:tt)+) => (
     separated_pair!($i, call!($f), $($rest)*);
+  );
+
+  ($i:expr, $self_:ident.$method:ident, $($rest:tt)+) => (
+    separated_pair!($i, call_m!($self_.$method), $($rest)*);
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! separated_pair1(
+  ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
+    {
+      match $submac2!($i, $($args2)*) {
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i2,_)    => {
+          separated_pair2!(i2, $res1,  $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $res1:ident, $g:expr, $($rest:tt)+) => (
+    separated_pair1!($i, $res1, call!($g), $($rest)*);
+  );
+  ($i:expr, $res1:ident, $self_:ident.$method:ident, $($rest:tt)+) => (
+    separated_pair1!($i, $res1, call_m!($self_.$method), $($rest)*);
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! separated_pair2(
+  ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
+    {
+      match $submac3!($i, $($args3)*) {
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i3,o3)   => {
+          $crate::IResult::Done(i3, ($res1, o3))
+        }
+      }
+    }
+  );
+
+  ($i:expr, $res1:ident, $h:expr) => (
+    separated_pair2!($i, $res1, call!($h));
+  );
+
+  ($i:expr, $res1:ident, $self_:ident.$method:ident) => (
+    separated_pair2!($i, $res1, call_m!($self_.$method));
   );
 );
 
@@ -1797,6 +1896,18 @@ macro_rules! preceded(
 
   ($i:expr, $f:expr, $g:expr) => (
     preceded!($i, call!($f), call!($g));
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    preceded!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    preceded!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
+
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    preceded!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
   );
 );
 
@@ -2126,7 +2237,7 @@ macro_rules! many1(
     many1!($i, call!($f));
   );
   ($i:expr, $self_:ident.$method:ident) => (
-    many1!($i, call_m!($self.method));
+    many1!($i, call_m!($self_.method));
   );
 );
 
