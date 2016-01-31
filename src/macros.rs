@@ -441,6 +441,15 @@ macro_rules! map(
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
     map_impl!($i, call!($f), $submac!($($args)*));
   );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    map_impl!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    map_impl!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    map_impl!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
 );
 
 /// Internal parser, do not use directly
@@ -474,6 +483,15 @@ macro_rules! map_res (
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
     map_res_impl!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    map_res_impl!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    map_res_impl!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    map_res_impl!($i, call_m!($self_.$method), $submac!($($args)*));
   );
 );
 
@@ -512,6 +530,15 @@ macro_rules! map_opt (
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
     map_opt_impl!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    map_opt_impl!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    map_opt_impl!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    map_opt_impl!($i, call_m!($self_.$method), $submac!($($args)*));
   );
 );
 
@@ -569,6 +596,9 @@ macro_rules! value (
   );
   ($i:expr, $res:expr, $f:expr) => (
     value!($i, $res, call!($f))
+  );
+  ($i:expr, $res:expr, $self_:ident.$method:ident) => (
+    value!($i, $res, call_m!($self_.$method))
   );
   ($i:expr, $res:expr) => (
     $crate::IResult::Done($i, $res)
@@ -703,6 +733,10 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, call!($e) ~ $($rest)*);
   );
+  ($i:expr, $consumed:expr, $self_:ident.$method:ident ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, call_m!($self_.$method) ~ $($rest)*);
+  );
+
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
       use $crate::InputLength;
@@ -715,10 +749,13 @@ macro_rules! chaining_parser (
         }
       }
     }
-);
+  );
 
   ($i:expr, $consumed:expr, $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
+  );
+  ($i:expr, $consumed:expr, $self_:ident.$method:ident ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, call_m!($self_.$method) ? ~ $($rest)*);
   );
 
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
@@ -744,6 +781,9 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, $field: call!($e) ~ $($rest)*);
   );
+  ($i:expr, $consumed:expr, $field:ident : $self_:ident.$method:ident ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, $field: call_m!($self_.$method) ~ $($rest)*);
+  );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
@@ -763,6 +803,9 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, mut $field: call!($e) ~ $($rest)*);
   );
+  ($i:expr, $consumed:expr, mut $field:ident : $self_:ident.$method:ident ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, mut $field: call_m!($self_.$method) ~ $($rest)*);
+  );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
@@ -781,6 +824,9 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, $field : call!($e) ? ~ $($rest)*);
+  );
+  ($i:expr, $consumed:expr, $field:ident : $self_:ident.$method:ident ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, $field : call_m!($self_.$method) ? ~ $($rest)*);
   );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
@@ -805,6 +851,9 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, mut $field : call!($e) ? ~ $($rest)*);
+  );
+  ($i:expr, $consumed:expr, mut $field:ident : $self_:ident.$method:ident ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, mut $field : call_m!($self_.$method) ? ~ $($rest)*);
   );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
@@ -831,6 +880,9 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, call!($e), $assemble);
   );
+  ($i:expr, $consumed:expr, $self_:ident.$method:ident, $assemble:expr) => (
+    chaining_parser!($i, $consumed, call_m!($self_.$method), $assemble);
+  );
 
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ), $assemble:expr) => (
     match $submac!($i, $($args)*) {
@@ -845,6 +897,9 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $e:ident ?, $assemble:expr) => (
     chaining_parser!($i, $consumed, call!($e) ?, $assemble);
+  );
+  ($i:expr, $consumed:expr, $self_:ident.$method:ident ?, $assemble:expr) => (
+    chaining_parser!($i, $consumed, call_m!($self_.$method) ?, $assemble);
   );
 
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => ({
@@ -867,6 +922,9 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, $field:ident : $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, $field: call!($e), $assemble);
   );
+  ($i:expr, $consumed:expr, $field:ident : $self_:ident.$method:ident, $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field: call_m!($self_.$method), $assemble);
+  );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
     match $submac!($i, $($args)*) {
@@ -883,6 +941,9 @@ macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, mut $field: call!($e), $assemble);
   );
+  ($i:expr, $consumed:expr, mut $field:ident : $self_:ident.$method:ident, $assemble:expr) => (
+    chaining_parser!($i, $consumed, mut $field: call_m!($self_.$method), $assemble);
+  );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
     match $submac!($i, $($args)*) {
@@ -898,6 +959,9 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ? , $assemble:expr) => (
     chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
+  );
+  ($i:expr, $consumed:expr, $field:ident : $self_:ident.$method:ident ? , $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field : call_m!($self_.$method) ? , $assemble);
   );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => ({
@@ -919,6 +983,9 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? , $assemble:expr) => (
     chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
+  );
+  ($i:expr, $consumed:expr, mut $field:ident : $self_:ident.$method:ident ? , $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field : call_m!($self_.$method) ? , $assemble);
   );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => ({
@@ -993,6 +1060,9 @@ macro_rules! tuple_parser (
   ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
     tuple_parser!($i, $consumed, ($($parsed),*), call!($e), $($rest)*);
   );
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $self_:ident.$method:ident, $($rest:tt)*) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call_m!($self_.$method), $($rest)*);
+  );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use $crate::InputLength;
@@ -1021,6 +1091,9 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
     tuple_parser!($i, $consumed, ($($parsed),*), call!($e));
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $self_:ident.$method:ident) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call_m!($self_.$method));
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
@@ -1188,6 +1261,9 @@ macro_rules! alt_parser (
   ($i:expr, $e:ident | $($rest:tt)*) => (
     alt_parser!($i, call!($e) | $($rest)*);
   );
+  ($i:expr, $self_:ident.$method:ident | $($rest:tt)*) => (
+    alt_parser!($i, call_m!($self_.$method) | $($rest)*);
+  );
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
@@ -1215,9 +1291,15 @@ macro_rules! alt_parser (
   ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
     alt_parser!($i, call!($e) => { $gen } | $($rest)*);
   );
+  ($i:expr, $self_:ident.$method:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_parser!($i, call_m!($self_.$method) => { $gen } | $($rest)*);
+  );
 
   ($i:expr, $e:ident => { $gen:expr }) => (
     alt_parser!($i, call!($e) => { $gen });
+  );
+  ($i:expr, $self_:ident.$method:ident => { $gen:expr }) => (
+    alt_parser!($i, call_m!($self_.$method) => { $gen });
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
@@ -1234,6 +1316,9 @@ macro_rules! alt_parser (
 
   ($i:expr, $e:ident) => (
     alt_parser!($i, call!($e));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    alt_parser!($i, call_m!($self_.$method));
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
