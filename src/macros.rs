@@ -230,6 +230,9 @@ macro_rules! error (
   ($i:expr, $code:expr, $f:expr) => (
     error!($i, $code, call!($f));
   );
+  ($i:expr, $code:expr, $self_:ident.$method:ident) => (
+    error!($i, $code, call_m!($self_.$method));
+  );
 );
 
 /// Add an error if the child parser fails
@@ -253,6 +256,9 @@ macro_rules! add_error (
   );
   ($i:expr, $code:expr, $f:expr) => (
     add_error!($i, $code, call!($f));
+  );
+  ($i:expr, $code:expr, $self_:ident.$method:ident) => (
+    add_error!($i, $code, call_m!($self_.$method));
   );
 );
 
@@ -297,6 +303,9 @@ macro_rules! fix_error (
   ($i:expr, $t:ty, $f:expr) => (
     fix_error!($i, $t, call!($f));
   );
+  ($i:expr, $t:ty, $self_:ident.$method:ident) => (
+    fix_error!($i, $t, call_m!($self_.$method));
+  );
 );
 
 /// replaces a `Incomplete` returned by the child parser
@@ -317,6 +326,9 @@ macro_rules! complete (
   );
   ($i:expr, $f:expr) => (
     complete!($i, call!($f));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    complete!($i, call_m!($self_.$method));
   );
 );
 
@@ -359,6 +371,9 @@ macro_rules! try_parse (
   ($i:expr, $f:expr) => (
     try_parse!($i, call!($f))
   );
+  ($i:expr, $self_:ident.$method:ident) => (
+    try_parse!($i, call_m!($self_.$method))
+  );
 );
 
 /// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
@@ -398,6 +413,15 @@ macro_rules! flat_map(
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
     flat_map!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    flat_map!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    flat_map!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    flat_map!($i, call_m!($self_.$method), $submac!($($args)*));
   );
 );
 
@@ -2015,6 +2039,9 @@ macro_rules! many1(
   );
   ($i:expr, $f:expr) => (
     many1!($i, call!($f));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    many1!($i, call_m!($self.method));
   );
 );
 
