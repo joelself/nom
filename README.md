@@ -1,5 +1,6 @@
 # nom++, [nom](https://github.com/Geal/nom) for methods
 
+### Version 1 of **nom++** has been merged into **nom** and been release with nom version 1.2.0!
 
 **nom** is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
 
@@ -8,7 +9,7 @@
 ## Features
 
 Here are the current and planned features, with their status:
-- [x] Make method creating and using macros
+- [x] Make method creating and using macros (Now can be used in version 1.2.0 of **nom**!)
 - [ ] Add variations on parser combinators in macros.rs that will wrap methods just like they wrap functions right now
 - [ ] Write tests for all of the new ways you can create and call methods and functions (partially done)
 
@@ -57,8 +58,6 @@ Story time! I was writing a [TOML](https://github.com/toml-lang/toml) parser and
 The whole point of **nom**`, besides ease of use, is that it's dang fast. Putting in a post-processing step would be wasteful when what I wanted to do could easily be done on-the-fly. So option 1 was out. Global variables would allow me store my extra information on-the-fly, but, while global variables aren't always bad, I feel they should be avoided whenever possible. So option 2 was also out. Option three avoids globals and does it's work on-the-fly and so was the best option. The only problem was that **nom** didn't support creating parsing methods. So I made them myself.
 
 The anwser then is: you'll want to use parsing structs and methods whenever your parsing requires accessing variables other than the input or your generated output.
-
-It remains to be seen whether [Geal](https://github.com/Geal/) will want to merge this into **nom**. If he doesn't want to add it, I'll just keep this as a fork of **nom** or as a separate crate that builds on top of **nom**.
 
 ## How does it work?
 
