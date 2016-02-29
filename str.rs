@@ -143,10 +143,10 @@ macro_rules! is_a_s (
 );
 
 
-/// `take_while_s!(char -> bool) => &str -> IResult<&str, &str>`
-/// returns the longest list of characters until the provided function fails.
+/// `take_while!(char -> bool) => &str -> IResult<&str, &str>`
+/// returns the longest list of bytes until the provided function fails.
 ///
-/// The argument is either a function `char -> bool` or a macro returning a `bool
+/// The argument is either a function `T -> bool` or a macro returning a `bool
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -183,10 +183,10 @@ macro_rules! take_while_s (
   );
 );
 
-/// `take_while1_s!(char -> bool) => &str -> IResult<&str, &str>`
-/// returns the longest (non empty) list of characters until the provided function fails.
+/// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest (non empty) list of bytes until the provided function fails.
 ///
-/// The argument is either a function `char -> bool` or a macro returning a `bool`
+/// The argument is either a function `T -> bool` or a macro returning a `bool`
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
@@ -225,10 +225,10 @@ macro_rules! take_while1_s (
 );
 
 
-/// `take_till_s!(&str -> bool) => &str -> IResult<&str, &str>`
-/// returns the longest list of characters until the provided function succeeds
+/// `take_till_s!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest list of bytes until the provided function succeeds
 ///
-/// The argument is either a function `char -> bool` or a macro returning a `bool
+/// The argument is either a function `T -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
