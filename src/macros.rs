@@ -152,6 +152,26 @@ macro_rules! call (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
+
+/// Used to called methods then move self back into self
+#[macro_export]
+macro_rules! call_m (
+  ($i:expr, $self_:ident.$method:ident) => (
+    {
+      let (tmp, res) = $self_.$method($i);
+      $self_ = tmp;
+      res
+    }
+  );
+  ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => (
+    {
+      let (tmp, res) = $self_.$method($i, $($args),*);
+      $self_ = tmp;
+      res
+    }
+  );
+);
+
 /// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
 ///
 /// Supports up to 6 arguments
@@ -1938,6 +1958,18 @@ macro_rules! terminated(
   ($i:expr, $f:expr, $g:expr) => (
     terminated!($i, call!($f), call!($g));
   );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    terminated!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    terminated!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
+
+  ($i:expr, $self1_:ident.$method1:ident, $self2:ident.$method2:ident) => (
+    terminated!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
 );
 
 /// `delimited!(I -> IResult<I,T>, I -> IResult<I,O>, I -> IResult<I,U>) => I -> IResult<I, O>`
@@ -1958,6 +1990,10 @@ macro_rules! delimited(
 
   ($i:expr, $f:expr, $($rest:tt)+) => (
     delimited!($i, call!($f), $($rest)*);
+  );
+
+  ($i:expr, $self_:ident.$method:ident, $($rest:tt)+) => (
+    delimited!($i, call_m!($self_.$method), $($rest)*);
   );
 );
 
@@ -2018,6 +2054,16 @@ macro_rules! separated_list(
   ($i:expr, $f:expr, $g:expr) => (
     separated_list!($i, call!($f), call!($g));
   );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    separated_list!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    separated_list!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2:ident.$method2:ident) => (
+    separated_list!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
+  );
 );
 
 /// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
@@ -2074,6 +2120,16 @@ macro_rules! separated_nonempty_list(
   );
   ($i:expr, $f:expr, $g:expr) => (
     separated_nonempty_list!($i, call!($f), call!($g));
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $self_:ident.$method:ident) => (
+    separated_nonempty_list!($i, $submac!($($args)*), call_m!($self_.$method));
+  );
+  ($i:expr, $self_:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+    separated_nonempty_list!($i, call_m!($self_.$method), $submac!($($args)*));
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2:ident.$method2:ident) => (
+    separated_nonempty_list!($i, call_m!($self1_.$method1), call_m!($self2_.$method2));
   );
 );
 
@@ -2157,6 +2213,9 @@ macro_rules! many0(
   );
   ($i:expr, $f:expr) => (
     many0!($i, call!($f));
+  );
+  ($i:expr, $self_:ident.$method:ident) => (
+    many0!($i, call_m!($self_.$method));
   );
 );
 
@@ -2325,6 +2384,9 @@ macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $f:expr) => (
     many_m_n!($i, $m, $n, call!($f));
   );
+  ($i:expr, $m:expr, $n: expr, $self_:ident.$method:ident) => (
+    many_m_n!($i, $m, $n, call_m!($self_.$method));
+  );
 );
 
 /// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
@@ -2379,6 +2441,9 @@ macro_rules! count(
   );
   ($i:expr, $f:expr, $count: expr) => (
     count!($i, call!($f), $count);
+  );
+  ($i:expr, $self_:ident.$method:ident, $count: expr) => (
+    count!($i, call_m!($self_.$method), $count);
   );
 );
 
@@ -2440,6 +2505,9 @@ macro_rules! count_fixed (
   );
   ($i:expr, $typ: ty, $f:ident, $count: expr) => (
     count_fixed!($i, $typ, call!($f), $count);
+  );
+  ($i:expr, $typ: ty, $self_:ident.$method:ident, $count: expr) => (
+    count_fixed!($i, $typ, call_m!($self_.$method), $count);
   );
 );
 
@@ -2503,6 +2571,84 @@ macro_rules! length_value(
             }
 
             match $g(input) {
+              $crate::IResult::Done(iparse, oparse) => {
+                res.push(oparse);
+                input = iparse;
+              },
+              $crate::IResult::Error(_)      => {
+                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
+              },
+              $crate::IResult::Incomplete(a) => {
+                ret = match a {
+                  $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * $length))
+                };
+                break;
+              }
+            }
+          }
+
+          ret
+        }
+      }
+    }
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident) => (
+    {
+      match $self1_.$method1($i) {
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(inum, onum)   => {
+          let ret;
+          let length_token = $i.len() - inum.len();
+          let mut input    = inum;
+          let mut res      = ::std::vec::Vec::new();
+
+          loop {
+            if res.len() == onum as usize {
+              ret = $crate::IResult::Done(input, res); break;
+            }
+
+            match $self2_.$method2(input) {
+              $crate::IResult::Done(iparse, oparse) => {
+                res.push(oparse);
+                input = iparse;
+              },
+              $crate::IResult::Error(_)      => {
+                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
+              },
+              $crate::IResult::Incomplete(a) => {
+                ret = match a {
+                  $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * length))
+                };
+                break;
+              }
+            }
+          }
+
+          ret
+        }
+      }
+    }
+  );
+  ($i:expr, $self1_:ident.$method1:ident, $self2_:ident.$method2:ident, $length:expr) => (
+    {
+      match $self1_.$method1($i) {
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(inum, onum)   => {
+          let ret;
+          let length_token = $i.len() - inum.len();
+          let mut input    = inum;
+          let mut res      = ::std::vec::Vec::new();
+
+          loop {
+            if res.len() == onum as usize {
+              ret = $crate::IResult::Done(input, res); break;
+            }
+
+            match $self2_.$method2(input) {
               $crate::IResult::Done(iparse, oparse) => {
                 res.push(oparse);
                 input = iparse;
