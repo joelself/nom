@@ -5,6 +5,8 @@
 
 **nom++** is an extension of **nom** that allows you to create parsing [methods](http://stackoverflow.com/questions/155609/difference-between-a-method-and-a-function). The goal is for method-making macros have parity with the function-making macros that are already in **nom**. 
 
+### Phase 1 of method macros was released as part of **nom** 1.2.0! You can now create parsing structs and have a place to store the results of your parse other than global variables!
+
 ## Features
 
 Here are the current and planned features, with their status:
@@ -57,8 +59,6 @@ Story time! I was writing a [TOML](https://github.com/toml-lang/toml) parser and
 The whole point of **nom**`, besides ease of use, is that it's dang fast. Putting in a post-processing step would be wasteful when what I wanted to do could easily be done on-the-fly. So option 1 was out. Global variables would allow me store my extra information on-the-fly, but, while global variables aren't always bad, I feel they should be avoided whenever possible. So option 2 was also out. Option three avoids globals and does it's work on-the-fly and so was the best option. The only problem was that **nom** didn't support creating parsing methods. So I made them myself.
 
 The anwser then is: you'll want to use parsing structs and methods whenever your parsing requires accessing variables other than the input or your generated output.
-
-It remains to be seen whether [Geal](https://github.com/Geal/) will want to merge this into **nom**. If he doesn't want to add it, I'll just keep this as a fork of **nom** or as a separate crate that builds on top of **nom**.
 
 ## How does it work?
 
