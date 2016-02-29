@@ -9,7 +9,7 @@
 
 Here are the current and planned features, with their status:
 - [x] Make method creating and using macros
-- [ ] Add variations on parser combinators in macros.rs that will wrap methods just like they wrap functions right now
+- [x] Add variations on parser combinators in macros.rs that will wrap methods just like they wrap functions right now
 - [ ] Write tests for all of the new ways you can create and call methods and functions (partially done)
 
 ## How to use it
@@ -27,7 +27,7 @@ impl<'a> SomeStruct<'a> {
   method!(<SomeStruct<'a>, &str, &str>, take4, mut self, take_s!(4));
 }
 ```
-You can make `self` immutable if you like:
+You can make `self` immutable if you'd like:
 ```rust
   method!(<SomeStruct<'a>, &str, &str>, take4, self, take!(4));
 ```
