@@ -95,7 +95,10 @@ macro_rules! closure (
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
@@ -105,42 +108,66 @@ macro_rules! named (
     );
     ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
-            $submac!(i, $($args)*)
+            debug!("Entering function {} with input: {:?}", stringify!($name), i);
+            let result = $submac!(i, $($args)*);
+            debug!("Exiting function {} with result {:?}", stringify!($name), result);
+            result
         }
     );
 );

@@ -98,6 +98,7 @@ extern crate regex;
 #[macro_use] extern crate lazy_static;
 #[cfg(feature = "nightly")]
 extern crate test;
+#[macro_use]extern crate log;
 
 #[cfg(feature = "core")]
 mod std {

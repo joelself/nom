@@ -107,125 +107,165 @@
 macro_rules! method (
   // Non-public immutable self
   ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   ($name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
     fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   ($name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
     fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   ($name:ident<$a:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       fn $name<'a>( $self_: $a, i: &'a[u8] ) -> ($a, $crate::IResult<&'a [u8], $o, u32>) {
+        debug!("Entering method {} with input: {}", stringify!($name), i);
         let result = $submac!(i, $($args)*);
+        debug!("Exiting method {} with result {:?}", stringify!($name), result);
         ($self_, result)
       }
   );
   ($name:ident<$a:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       fn $name( $self_: $a, i: &[u8] ) -> ($a, $crate::IResult<&[u8], &[u8], u32>) {
-        let result = $submac!(i, $($args)*);
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
         ($self_, result)
       }
   );
   // Public immutable self
   (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       pub fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
-        let result = $submac!(i, $($args)*);
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
         ($self_, result)
       }
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
-        let result = $submac!(i, $($args)*);
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
         ($self_, result)
       }
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a,i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   (pub $name:ident<$a:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name<'a>( $self_: $a, i: &'a[u8] ) -> ($a, $crate::IResult<&'a [u8], $o, u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   (pub $name:ident<$a:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a, i: &[u8] ) -> ($a, $crate::IResult<&[u8], &[u8], u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   // Non-public mutable self
   ($name:ident<$a:ty>( $i:ty ) -> $o:ty, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   ($name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+    fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
-      }
+    }
   );
   ($name:ident<$a:ty,$i:ty,$o:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
     fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   ($name:ident<$a:ty,$o:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name<'a>( mut $self_: $a, i: &'a[u8] ) -> ($a, $crate::IResult<&'a [u8], $o, u32>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    fn $name<'a>( mut $self_: $a, i: &'a[u8] ) -> ($a, $crate::IResult<&'a [u8], $o, u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   ($name:ident<$a:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name( mut $self_: $a, i: &[u8] ) -> ($a, $crate::IResult<&[u8], &[u8], u32>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    fn $name( mut $self_: $a, i: &[u8] ) -> ($a, $crate::IResult<&[u8], &[u8], u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   // Public mutable self
   (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      pub fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    pub fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
-      fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
-        let result = $submac!(i, $($args)*);
-        ($self_, result)
-      }
+    fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
+      let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
+      ($self_, result)
+    }
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name( mut $self_: $a,i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   (pub $name:ident<$a:ty,$o:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name<'a>( mut $self_: $a, i: &'a[u8] ) -> ($a, $crate::IResult<&'a [u8], $o, u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
   (pub $name:ident<$a:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
     pub fn $name( mut $self_: $a, i: &[u8] ) -> ($a, $crate::IResult<&[u8], &[u8], u32>) {
+      debug!("Entering method {} with input: {}", stringify!($name), i);
       let result = $submac!(i, $($args)*);
+      debug!("Exiting method {} with result {:?}", stringify!($name), result);
       ($self_, result)
     }
   );
@@ -256,7 +296,7 @@ macro_rules! call_m (
 ///
 /// Supports up to 6 arguments
 #[macro_export]
-macro_rules! apply_rf (
+macro_rules! apply_m (
   ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => ( { let (tmp, res) = $self_.$method( $i, $($args),* ); $self_ = tmp; res } );
 );
 
